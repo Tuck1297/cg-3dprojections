@@ -85,8 +85,25 @@ function animate(timestamp) {
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
-    console.log(scene);
-    
+    //console.log(scene);
+    // Transform to canonical view volume
+    let per_Canonical = mat4x4Perspective(scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
+    // multiply this matrix by all points of the shape that is being drawn
+    // clip in 3D   
+    //clipLinePerspective(line, z_min);
+    // project to 2d
+    // draw line
+
+    /* Plan of Execution
+       1. transform to canonical view volume - DONE
+       2. Clip in 3D -> work on tomorrow -- need to figure out what z_min is // clip along
+       all edges before continuing
+       3. Project to 2D - Translate(1,1) and Scale(width/2, height/2)
+       take all cliped lines and translate and scale them
+       4. Draw Line -> after translating it to fit the window then draw
+       after getting all lines then draw
+    */
+
     // TODO: implement drawing here!
     // For each model, for each edge
     //  * transform to canonical view volume

@@ -88,21 +88,18 @@ function drawScene() {
     //console.log(scene);
     // Transform to canonical view volume
     let per_Canonical = mat4x4Perspective(scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
+    let mAndnPer = Matrix.multiply([mat4x4MPer(),per_Canonical]);
     // multiply this matrix by all points of the shape that is being drawn
-    // clip in 3D   
-    //clipLinePerspective(line, z_min);
-    // project to 2d
-    // draw line
+    let canonicalVertices = []; 
+    // Convert all points to world view
+    for (let i = 0; i < scene.models[0].vertices.length; i++) {
+        let vertex_Matrix = new Matrix(4,1);
+        vertex_Matrix.values = [scene.models[0].vertices[i].x,scene.models[0].vertices[i].y,
+                                scene.models[0].vertices[i].z,scene.models[0].vertices[i].w]; 
+        calculation = Matrix.multiply([mAndnPer, vertex_Matrix]);
+        canonicalVertices[i] = calculation;
+    }
 
-    /* Plan of Execution
-       1. transform to canonical view volume - DONE
-       2. Clip in 3D -> work on tomorrow -- need to figure out what z_min is // clip along
-       all edges before continuing
-       3. Project to 2D - Translate(1,1) and Scale(width/2, height/2)
-       take all cliped lines and translate and scale them
-       4. Draw Line -> after translating it to fit the window then draw
-       after getting all lines then draw
-    */
 
     // TODO: implement drawing here!
     // For each model, for each edge
@@ -175,13 +172,24 @@ function clipLineParallel(line) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
+    //console.log(line);
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
     
-    // TODO: implement clipping here!
+
+    // edit p0 and p1
+    // need some kind of loop 
+    // trival accept 
+    // trival reject
+    // Otherwise
+    // 1.select endpoint that lies outside the viewspace
+    // 2.find 1st bit set to 1 in outcode 
+    //  - calculate intersction point between line and cooresponding edge based on side we are looking at
+    //  - replace current point with intersection point
+    //  - recalculate endpoint's outcode
     
     return result;
 }

@@ -74,7 +74,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                            [ 0,  0,  0,  1]];
 
     // ...
-    let transform = Matrix.multiply([transform_Matrix, rotate_Matrix, shear_Matrix,scale_Matrix]);
+    let transform = Matrix.multiply([scale_Matrix, shear_Matrix, rotate_Matrix, transform_Matrix]);
     //console.log(transform);
     return transform;
 }

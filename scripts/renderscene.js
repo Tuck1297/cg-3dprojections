@@ -3,12 +3,12 @@ let ctx;
 let scene;
 let start_time;
 
-const LEFT =   32; // binary 100000
-const RIGHT =  16; // binary 010000
+const LEFT = 32; // binary 100000
+const RIGHT = 16; // binary 010000
 const BOTTOM = 8;  // binary 001000
-const TOP =    4;  // binary 000100
-const FAR =    2;  // binary 000010
-const NEAR =   1;  // binary 000001
+const TOP = 4;  // binary 000100
+const FAR = 2;  // binary 000010
+const NEAR = 1;  // binary 000001
 const FLOAT_EPSILON = 0.000001;
 
 // Initialization function - called when web page loads
@@ -25,25 +25,29 @@ function init() {
     scene = {
         view: {
             type: 'perspective',
-            prp: Vector3(44, 20, -16),
-            srp: Vector3(20, 20, -40),
-            vup: Vector3(0, 1, 0),
-            clip: [-19, 5, -10, 8, 12, 100]
+            prp: Vector3(0, 10, -5),
+            srp: Vector3(20, 15, -40),
+            vup: Vector3(1, 1, 0),
+            clip: [-12, 6, -12, 6, 10, 100]
+            //prp: Vector3(44, 20, -16),
+            //srp: Vector3(20, 20, -40),
+            //vup: Vector3(0, 1, 0),
+            //clip: [-19, 5, -10, 8, 12, 100]
         },
         models: [
             {
                 type: 'generic',
                 vertices: [
-                    Vector4( 0,  0, -30, 1),
-                    Vector4(20,  0, -30, 1),
+                    Vector4(0, 0, -30, 1),
+                    Vector4(20, 0, -30, 1),
                     Vector4(20, 12, -30, 1),
                     Vector4(10, 20, -30, 1),
-                    Vector4( 0, 12, -30, 1),
-                    Vector4( 0,  0, -60, 1),
-                    Vector4(20,  0, -60, 1),
+                    Vector4(0, 12, -30, 1),
+                    Vector4(0, 0, -60, 1),
+                    Vector4(20, 0, -60, 1),
                     Vector4(20, 12, -60, 1),
                     Vector4(10, 20, -60, 1),
-                    Vector4( 0, 12, -60, 1)
+                    Vector4(0, 12, -60, 1)
                 ],
                 edges: [
                     [0, 1, 2, 3, 4, 0],
@@ -61,7 +65,7 @@ function init() {
 
     // event handler for pressing arrow keys
     document.addEventListener('keydown', onKeyDown, false);
-    
+
     // start animation loop
     start_time = performance.now(); // current timestamp in milliseconds
     window.requestAnimationFrame(animate);
@@ -71,7 +75,7 @@ function init() {
 function animate(timestamp) {
     // step 1: calculate time (time since start)
     let time = timestamp - start_time;
-    
+
     // step 2: transform models based on time
     // TODO: implement this!
 
@@ -85,21 +89,49 @@ function animate(timestamp) {
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
-    //console.log(scene);
     // Transform to canonical view volume
     let per_Canonical = mat4x4Perspective(scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
-    let mAndnPer = Matrix.multiply([mat4x4MPer(),per_Canonical]);
+    console.log(per_Canonical)
+    let mAndnPer = Matrix.multiply([mat4x4MPer(), per_Canonical]);
     // multiply this matrix by all points of the shape that is being drawn
-    let canonicalVertices = []; 
+    let canonicalVertices = [];
     // Convert all points to world view
     for (let i = 0; i < scene.models[0].vertices.length; i++) {
-        let vertex_Matrix = new Matrix(4,1);
-        vertex_Matrix.values = [scene.models[0].vertices[i].x,scene.models[0].vertices[i].y,
-                                scene.models[0].vertices[i].z,scene.models[0].vertices[i].w]; 
+        let vertex_Matrix = new Matrix(4, 1);
+        vertex_Matrix.values = [scene.models[0].vertices[i].x, scene.models[0].vertices[i].y,
+        scene.models[0].vertices[i].z, scene.models[0].vertices[i].w];
         calculation = Matrix.multiply([mAndnPer, vertex_Matrix]);
         canonicalVertices[i] = calculation;
     }
 
+    // Divide all x and y points by w
+    let preFrameBuffer = [];
+    for (let i = 0; i < canonicalVertices.length; i++) {
+        let temp = canonicalVertices[i].data[0] / canonicalVertices[i].data[3];
+        let temp2 = canonicalVertices[i].data[1] / canonicalVertices[i].data[3];
+        preFrameBuffer[i] = new Vector4(temp, temp2, canonicalVertices[i].data[2], 1);
+    }
+
+    // Translate to 2D
+    let toDraw = [];
+    let bufferMatrix = new Matrix(4, 4);
+    bufferMatrix.values = [[view.width / 2, 0, 0, view.width / 2],
+    [0, view.height / 2, 0, view.height / 2],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]];
+
+    for (let i = 0; i < canonicalVertices.length; i++) {
+        let calculation = Matrix.multiply([bufferMatrix, preFrameBuffer[i]]);
+        toDraw[i] = calculation;
+    }
+    // Temp way to draw shape onto canvas - pre-line clipping
+    for (let i = 0; i < toDraw.length - 1; i++) {
+        drawLine(toDraw[i].data[0], toDraw[i].data[1], toDraw[i + 1].data[0], toDraw[i + 1].data[1]);
+    }
+    drawLine(toDraw[1].data[0], toDraw[1].data[1], toDraw[6].data[0], toDraw[6].data[1]);
+    drawLine(toDraw[2].data[0], toDraw[2].data[1], toDraw[7].data[0], toDraw[7].data[1]);
+    drawLine(toDraw[3].data[0], toDraw[3].data[1], toDraw[8].data[0], toDraw[8].data[1]);
+    drawLine(toDraw[5].data[0], toDraw[5].data[1], toDraw[0].data[0], toDraw[0].data[1]);
 
     // TODO: implement drawing here!
     // For each model, for each edge
@@ -160,13 +192,14 @@ function outcodePerspective(vertex, z_min) {
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
     let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
-    
+
+
     // TODO: implement clipping here!
-    
+
     return result;
 }
 
@@ -174,23 +207,101 @@ function clipLineParallel(line) {
 function clipLinePerspective(line, z_min) {
     //console.log(line);
     let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
-    
 
-    // edit p0 and p1
-    // need some kind of loop 
-    // trival accept 
-    // trival reject
-    // Otherwise
-    // 1.select endpoint that lies outside the viewspace
-    // 2.find 1st bit set to 1 in outcode 
-    //  - calculate intersction point between line and cooresponding edge based on side we are looking at
-    //  - replace current point with intersection point
-    //  - recalculate endpoint's outcode
-    
+    while (true) {
+        console.log(out0);
+        console.log(out1);
+        console.log(out0 | out1);
+        console.log((out0 & out1));
+        // Trival Accept
+        if (out0 == 0 && out1 == 0) {
+            // Done - return p0 and p1
+            // result = //both endpoints that have been calculated to be inside view volume
+            break;
+        }
+        // Trival Reject
+        else if ((out0 & out1) != 0) {
+            // Done - return null
+            break;
+        } else {
+            // Otherwise investigate further 
+            // Choose point that lies outside the viewspace (if both just choose the first one)
+            let updateP0;
+            let outCodeUse;
+            if (out0 == 0) {
+                // select out1 vector
+                updateP0 = false;
+                outCodeUse = out1;
+            } else if (out1 == 0) {
+                // select out0 vector
+                updateP0 = true;
+                outCodeUse = out0;
+            } else {
+                // If both are not 0 then start with p0
+                updateP0 = true;
+                outCodeUse = out0;
+            }
+            //clip: [-12, 6, -12, 6, 10, 100] (Left, Right, Bottom, Top, Near, Far) -> ??? when to use these
+            // clip against edge that is first indicated by the outcode
+            // calculate point to replace the selected point with
+            let x, y, z, t;
+            let dx = p1.x - p0.x;
+            let dy = p1.y - p0.y;
+            let dz = p1.z - p0.z;
+            console.log(outCodeUse)
+            if ((outCodeUse & LEFT) == LEFT) {
+                console.log("Clip Against Left");
+                // Clip against left edge
+                t = ((0 - p0.x) + p0.z) / (dx - dz)
+            } else if ((outCodeUse & RIGHT) == RIGHT) {
+                console.log("Clip Against Right");
+                // Clip against right edge
+                t = (p0.x + p0.z) / ((0 - dx) - dz)
+            } else if ((outCodeUse & BOTTOM) == BOTTOM) {
+                console.log("Clip Against Bottom");
+                // Clip against bottom edge
+                t = ((0 - p0.y) + p0.z) / (dy - dz);
+            } else if ((outCodeUse & TOP) == TOP) {
+                console.log("Clip Against Top");
+                // Clip against top edge
+                t = (p0.y + p0.z) / ((0 - dy) - dz);
+            } else if ((outCodeUse & FAR) == FAR) {
+                console.log("Clip Against Far");
+                // Clip against far edge
+                t = ((0 - p0.z) - 1) / dz;
+            } else if ((outCodeUse & NEAR) == NEAR) {
+                console.log("Clip Against Near");
+                // Clip against near edge
+                t = (p0.z - z_min) / (0 - dz);
+            }
+            x = (1 - t) * p0.x + t * p1.x;
+            y = (1 - t) * p0.y + t * p1.y;
+            z = (1 - t) * p0.z + t * p1.z;
+            //console.log("X: " + x);
+            //console.log("Y: " + y);
+           // console.log("Z: " + z);
+
+            // replace point that was selected earlier and update outcode
+            if (updateP0 == true) {
+                // update p0
+                p0 = new Vector3(x, y, z);
+                out0 = outcodePerspective(p0, z_min);
+                console.log("P0: " + p0.x + ":" + p0.y + ":" + p0.z + " outcode: " + out0);
+            } else {
+                // update p1
+                p1 = new Vector3(x, y, z);
+                out1 = outcodePerspective(p1, z_min);
+                console.log("P1: " + p1.x + ":" + p1.y + ":" + p1.z + " outcode: " + out1);
+            }
+        }
+        // Still working on method - if break is removed potentially could crash web browser
+        break;
+    }
+
     return result;
 }
 
@@ -239,16 +350,16 @@ function loadNewScene() {
             if (scene.models[i].type === 'generic') {
                 for (let j = 0; j < scene.models[i].vertices.length; j++) {
                     scene.models[i].vertices[j] = Vector4(scene.models[i].vertices[j][0],
-                                                          scene.models[i].vertices[j][1],
-                                                          scene.models[i].vertices[j][2],
-                                                          1);
+                        scene.models[i].vertices[j][1],
+                        scene.models[i].vertices[j][2],
+                        1);
                 }
             }
             else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
-                                                 scene.models[i].center[1],
-                                                 scene.models[i].center[2],
-                                                 1);
+                    scene.models[i].center[1],
+                    scene.models[i].center[2],
+                    1);
             }
             scene.models[i].matrix = new Matrix(4, 4);
         }

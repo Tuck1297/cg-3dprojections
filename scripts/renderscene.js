@@ -29,8 +29,10 @@ function init() {
             //srp: Vector3(20, 15, -40),
             //vup: Vector3(1, 1, 0),
             //clip: [-12, 6, -12, 6, 10, 100]
-            prp: Vector3(44, 20, -16),
-            srp: Vector3(20, 20, -40),
+            // subtract from x and add to z to shift to left
+            // add to x and subtract from z to shift to right
+            prp: Vector3(34, 20, -6),
+            srp: Vector3(10, 20, -30),
             vup: Vector3(0, 1, 0),
             clip: [-19, 5, -10, 8, 12, 100]
         },
@@ -99,7 +101,7 @@ function drawScene() {
         let vertex_Matrix = new Matrix(4, 1);
         vertex_Matrix.values = [[scene.models[0].vertices[i].x], [scene.models[0].vertices[i].y],
         [scene.models[0].vertices[i].z], [scene.models[0].vertices[i].w]];
-        canonical_Vertices[i] = Matrix.multiply([perspective_Canonical_Matrix, vertex_Matrix]);
+        canonical_Vertices[i] = Matrix.multiply([perspective_Canonical_Matrix,scene.models[0].matrix, vertex_Matrix]);
     }
     //console.log(canonical_Vertices)
 
@@ -298,46 +300,31 @@ function clipLinePerspective(line, z_min) {
             if ((outCodeUse & LEFT) == LEFT) {
                 console.log("Clip Against Left");
                 // Clip against left edge
-                t = ((0 - p0.x) + p0.z) / (dx - dz)
-                x = (1 - t) * p0.x + t * p1.x;
-                y = (1 - t) * p0.y + t * p1.y;
-                z = (1 - t) * p0.z + t * p1.z;
+                t = ((0 - p0.x) + p0.z) / (dx - dz);
             } else if ((outCodeUse & RIGHT) == RIGHT) {
                 console.log("Clip Against Right");
                 // Clip against right edge
-                t = (p0.x + p0.z) / ((0 - dx) - dz)
-                x = (1 - t) * p0.x + t * p1.x;
-                y = (1 - t) * p0.y + t * p1.y;
-                z = (1 - t) * p0.z + t * p1.z;
+                t = (p0.x + p0.z) / ((0 - dx) - dz);
             } else if ((outCodeUse & BOTTOM) == BOTTOM) {
                 console.log("Clip Against Bottom");
                 // Clip against bottom edge
                 t = ((0 - p0.y) + p0.z) / (dy - dz);
-                x = (1 - t) * p0.x + t * p1.x;
-                y = (1 - t) * p0.y + t * p1.y;
-                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & TOP) == TOP) {
                 console.log("Clip Against Top");
                 // Clip against top edge
                 t = (p0.y + p0.z) / ((0 - dy) - dz);
-                x = (1 - t) * p0.x + t * p1.x;
-                y = (1 - t) * p0.y + t * p1.y;
-                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & FAR) == FAR) {
                 console.log("Clip Against Far");
                 // Clip against far edge
                 t = ((0 - p0.z) - 1) / dz;
-                x = (1 - t) * p0.x + t * p1.x;
-                y = (1 - t) * p0.y + t * p1.y;
-                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & NEAR) == NEAR) {
                 console.log("Clip Against Near");
                 // Clip against near edge
                 t = (p0.z - z_min) / (0 - dz);
+            }
                 x = (1 - t) * p0.x + t * p1.x;
                 y = (1 - t) * p0.y + t * p1.y;
                 z = (1 - t) * p0.z + t * p1.z;
-            }
             //console.log("X: " + x);
             //console.log("Y: " + y);
             // console.log("Z: " + z);

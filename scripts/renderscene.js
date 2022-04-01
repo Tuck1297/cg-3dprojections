@@ -25,14 +25,14 @@ function init() {
     scene = {
         view: {
             type: 'perspective',
-            prp: Vector3(0, 10, -5),
-            srp: Vector3(20, 15, -40),
-            vup: Vector3(1, 1, 0),
-            clip: [-12, 6, -12, 6, 10, 100]
-            //prp: Vector3(44, 20, -16),
-            //srp: Vector3(20, 20, -40),
-            //vup: Vector3(0, 1, 0),
-            //clip: [-19, 5, -10, 8, 12, 100]
+            //prp: Vector3(0, 10, -5),
+            //srp: Vector3(20, 15, -40),
+            //vup: Vector3(1, 1, 0),
+            //clip: [-12, 6, -12, 6, 10, 100]
+            prp: Vector3(44, 20, -16),
+            srp: Vector3(20, 20, -40),
+            vup: Vector3(0, 1, 0),
+            clip: [-19, 5, -10, 8, 12, 100]
         },
         models: [
             {
@@ -90,29 +90,70 @@ function animate(timestamp) {
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
     // Transform to canonical view volume
-    let per_Canonical = mat4x4Perspective(scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
-    console.log(per_Canonical)
-    let mAndnPer = Matrix.multiply([mat4x4MPer(), per_Canonical]);
-    // multiply this matrix by all points of the shape that is being drawn
-    let canonicalVertices = [];
-    // Convert all points to world view
+    let perspective_Canonical_Matrix = mat4x4Perspective(scene.view.prp, scene.view.srp, scene.view.vup, scene.view.clip);
+    //console.log(perspective_Canonical_Matrix)
+
+    // multiply all points by perspective_Canonical_Matrix
+    let canonical_Vertices = [];
     for (let i = 0; i < scene.models[0].vertices.length; i++) {
         let vertex_Matrix = new Matrix(4, 1);
-        vertex_Matrix.values = [scene.models[0].vertices[i].x, scene.models[0].vertices[i].y,
-        scene.models[0].vertices[i].z, scene.models[0].vertices[i].w];
-        calculation = Matrix.multiply([mAndnPer, vertex_Matrix]);
-        canonicalVertices[i] = calculation;
+        vertex_Matrix.values = [[scene.models[0].vertices[i].x], [scene.models[0].vertices[i].y],
+        [scene.models[0].vertices[i].z], [scene.models[0].vertices[i].w]];
+        canonical_Vertices[i] = Matrix.multiply([perspective_Canonical_Matrix, vertex_Matrix]);
     }
+    //console.log(canonical_Vertices)
 
-    // Divide all x and y points by w
-    let preFrameBuffer = [];
-    for (let i = 0; i < canonicalVertices.length; i++) {
-        let temp = canonicalVertices[i].data[0] / canonicalVertices[i].data[3];
-        let temp2 = canonicalVertices[i].data[1] / canonicalVertices[i].data[3];
-        preFrameBuffer[i] = new Vector4(temp, temp2, canonicalVertices[i].data[2], 1);
+    // Go throught all lines and clip where necessary 
+
+    //console.log(scene.models[0].edges.length)
+    let clippedVerticies = [];
+    let index = 0;
+    for (let i = 0; i < scene.models[0].edges.length; i++) {
+        let pt0 = canonical_Vertices[scene.models[0].edges[i][0]];
+
+        for (let j = 1; j < scene.models[0].edges[i].length; j++) {
+            let pt1 = canonical_Vertices[scene.models[0].edges[i][j]];
+            //console.log(pt0)
+            //console.log(pt1)
+            let line = {
+                pt0: {x:pt0.data[0],y:pt0.data[1],z:pt0.data[2]}, 
+                pt1: {x:pt1.data[0],y:pt1.data[1],z:pt1.data[2]}
+            }
+            //      console.log(scene.models[0].edges[i][j])
+            let clipped = clipLinePerspective(line, -(scene.view.clip[4]/scene.view.clip[5]));
+            //console.log("afterclipping")
+
+            if (clipped != null) {
+                let matrix1 = new Matrix(4,1);
+                let matrix2 = new Matrix(4,1);
+                matrix1.values = [[clipped.pt0.data[0]],[clipped.pt0.data[1]],[clipped.pt0.data[2]],[1]];
+                matrix2.values = [[clipped.pt1.data[0]],[clipped.pt1.data[1]],[clipped.pt1.data[2]],[1]];
+                clippedVerticies[index] = matrix1;
+                index++; 
+                clippedVerticies[index] = matrix2;
+                index++;
+            }
+            pt0 = pt1; 
+        }
     }
-
-    // Translate to 2D
+    // At this point the array contains all the lines to draw
+    // NOTE: the array does contain multiple instances of the same points
+    //  but did it this way to make is simpler for the drawing method
+    //console.log(clippedVerticies)
+    // Multiply by M_per matrix
+    // Divide x and y by w
+    let readyForBufferArray = [];
+    for (let i = 0; i < clippedVerticies.length; i++) {
+        let vertex_Matrix = new Matrix(4,1);
+        vertex_Matrix.values = [[clippedVerticies[i].data[0][0]],[clippedVerticies[i].data[1][0]],
+                                [clippedVerticies[i].data[2][0]],[clippedVerticies[i].data[3][0]]];
+        let calculation = Matrix.multiply([mat4x4MPer(),vertex_Matrix]);
+        vertex_Matrix.values = [[calculation.data[0]/calculation.data[3]],[calculation.data[1]/calculation.data[3]],[calculation.data[2]/1],[1]];
+        //console.log(vertex_Matrix)
+        readyForBufferArray[i] = vertex_Matrix;
+    }
+//console.log(readyForBufferArray)
+    // Convert to 2D viewspace
     let toDraw = [];
     let bufferMatrix = new Matrix(4, 4);
     bufferMatrix.values = [[view.width / 2, 0, 0, view.width / 2],
@@ -120,18 +161,19 @@ function drawScene() {
     [0, 0, 1, 0],
     [0, 0, 0, 1]];
 
-    for (let i = 0; i < canonicalVertices.length; i++) {
-        let calculation = Matrix.multiply([bufferMatrix, preFrameBuffer[i]]);
-        toDraw[i] = calculation;
-    }
-    // Temp way to draw shape onto canvas - pre-line clipping
-    for (let i = 0; i < toDraw.length - 1; i++) {
-        drawLine(toDraw[i].data[0], toDraw[i].data[1], toDraw[i + 1].data[0], toDraw[i + 1].data[1]);
-    }
-    drawLine(toDraw[1].data[0], toDraw[1].data[1], toDraw[6].data[0], toDraw[6].data[1]);
-    drawLine(toDraw[2].data[0], toDraw[2].data[1], toDraw[7].data[0], toDraw[7].data[1]);
-    drawLine(toDraw[3].data[0], toDraw[3].data[1], toDraw[8].data[0], toDraw[8].data[1]);
-    drawLine(toDraw[5].data[0], toDraw[5].data[1], toDraw[0].data[0], toDraw[0].data[1]);
+    for (let i = 0; i < readyForBufferArray.length; i=i+2) {
+        let calculation_Vertex_1 = Matrix.multiply([bufferMatrix, readyForBufferArray[i]]);
+        let calculation_Vertex_2 = Matrix.multiply([bufferMatrix, readyForBufferArray[i+1]]);
+        //console.log(calculation_Vertex_1)
+        //console.log(calculation_Vertex_2)
+        //console.log(calculation_Vertex_1.data[0]+":"+calculation_Vertex_1.data[1]);
+        //console.log(calculation_Vertex_2.data[0]+":"+calculation_Vertex_2.data[1]);
+        // toDraw[i] = calculation;
+        //drawLine(x1, y1, x2, y2);
+        drawLine(calculation_Vertex_1.data[0],calculation_Vertex_1.data[1], calculation_Vertex_2.data[0], calculation_Vertex_2.data[1]);
+     }
+     //console.log(toDraw)
+
 
     // TODO: implement drawing here!
     // For each model, for each edge
@@ -210,16 +252,17 @@ function clipLinePerspective(line, z_min) {
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
+    //console.log(line.pt0.x +":"+ line.pt0.y +":"+ line.pt0.z);
 
     while (true) {
-        console.log(out0);
-        console.log(out1);
-        console.log(out0 | out1);
-        console.log((out0 & out1));
+       // console.log(out0);
+        //console.log(out1);
+        //console.log(out0 | out1);
+       // console.log((out0 & out1));
         // Trival Accept
         if (out0 == 0 && out1 == 0) {
             // Done - return p0 and p1
-            // result = //both endpoints that have been calculated to be inside view volume
+            result = { pt0: p0, pt1: p1 };
             break;
         }
         // Trival Reject
@@ -256,49 +299,63 @@ function clipLinePerspective(line, z_min) {
                 console.log("Clip Against Left");
                 // Clip against left edge
                 t = ((0 - p0.x) + p0.z) / (dx - dz)
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & RIGHT) == RIGHT) {
                 console.log("Clip Against Right");
                 // Clip against right edge
                 t = (p0.x + p0.z) / ((0 - dx) - dz)
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & BOTTOM) == BOTTOM) {
                 console.log("Clip Against Bottom");
                 // Clip against bottom edge
                 t = ((0 - p0.y) + p0.z) / (dy - dz);
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & TOP) == TOP) {
                 console.log("Clip Against Top");
                 // Clip against top edge
                 t = (p0.y + p0.z) / ((0 - dy) - dz);
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & FAR) == FAR) {
                 console.log("Clip Against Far");
                 // Clip against far edge
                 t = ((0 - p0.z) - 1) / dz;
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             } else if ((outCodeUse & NEAR) == NEAR) {
                 console.log("Clip Against Near");
                 // Clip against near edge
                 t = (p0.z - z_min) / (0 - dz);
+                x = (1 - t) * p0.x + t * p1.x;
+                y = (1 - t) * p0.y + t * p1.y;
+                z = (1 - t) * p0.z + t * p1.z;
             }
-            x = (1 - t) * p0.x + t * p1.x;
-            y = (1 - t) * p0.y + t * p1.y;
-            z = (1 - t) * p0.z + t * p1.z;
             //console.log("X: " + x);
             //console.log("Y: " + y);
-           // console.log("Z: " + z);
-
+            // console.log("Z: " + z);
+            console.log("afteroutcodes")
             // replace point that was selected earlier and update outcode
             if (updateP0 == true) {
                 // update p0
-                p0 = new Vector3(x, y, z);
+                p0 = new Vector4(x, y, z, 1);
                 out0 = outcodePerspective(p0, z_min);
                 console.log("P0: " + p0.x + ":" + p0.y + ":" + p0.z + " outcode: " + out0);
             } else {
                 // update p1
-                p1 = new Vector3(x, y, z);
+                p1 = new Vector4(x, y, z, 1);
                 out1 = outcodePerspective(p1, z_min);
                 console.log("P1: " + p1.x + ":" + p1.y + ":" + p1.z + " outcode: " + out1);
             }
         }
-        // Still working on method - if break is removed potentially could crash web browser
-        break;
+        
     }
 
     return result;

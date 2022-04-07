@@ -1,14 +1,68 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
     // 1. translate PRP to origin
+    let transform_Matrix = new Matrix(4,4);
+    transform_Matrix.values = [[1,0,0,0-prp.x],
+                               [ 0,1,0,0-prp.y],
+                               [ 0,0,1,0-prp.z],
+                               [ 0,0,0,   1  ]];
+
+    // Convert x,y,z values associated with prp to u,v,n values
+    // N_AXIS
+    let prp_vector = new Vector(prp);
+    let unNormalized_N = prp_vector.subtract(srp)
+    let normalized_N = new Vector(unNormalized_N);
+    normalized_N.normalize();
+    //console.log(normalized_N);
+    //console.log(unNormalized_N);
+    // U_AXIS
+    let vup_vector = new Vector(vup);
+    let normalized_U = new Vector(vup_vector.cross(normalized_N));
+    normalized_U.normalize();
+    //V_AXIS
+    let v_vector = new Vector(normalized_N.cross(normalized_U));     
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    let rotate_Matrix = new Matrix(4,4);
+    rotate_Matrix.values = [[normalized_U.x, normalized_U.y,  normalized_U.z,0],
+                            [ v_vector.x, v_vector.y, v_vector.z ,0],
+                            [ normalized_N.x,     normalized_N.y,      normalized_N.z,    0],
+                            [     0,              0,               0,         1]];
     // 3. shear such that CW is on the z-axis
+    let cw = new Vector3((clip[0]+clip[1])/2, (clip[2]+clip[3])/2, -clip[4]);
+    let dop = new Vector(cw);
+    // DOP for now is same as cw because PRP in general case is at [0,0,0]
+    let sh_X_Shear = (0-dop.x)/dop.z;
+    let sh_Y_Shear = (0-dop.y)/dop.z;
+
+    let shear_Matrix = new Matrix(4,4);
+    shear_Matrix.values = [[1,0,sh_X_Shear,0],
+                           [0,1,sh_Y_Shear,0],
+                           [0,0,     1,    0],
+                           [0,0,     0,    1]];
+
     // 4. translate near clipping plane to origin
+    let translate_matrix = new Matrix(4, 4);
+    translate_matrix.values = [[1, 0, 0, 0],
+                               [0, 1, 0, 0],
+                               [0, 0, 1, clip[4]],
+                               [0, 0, 0, 0]];
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
+    let scale_X = 2/(clip[1] - clip[0]);
+    let scale_Y = 2/(clip[3] - clip[2]);
+    let scale_Z = 1/clip[5];
+
+    let scale_Matrix = new Matrix(4, 4);
+    scale_Matrix = [[scale_X, 0, 0, 0], 
+                    [0, scale_Y, 0, 0], 
+                    [0, 0, scale_Z, 0],
+                    [0, 0,   0,     1]];
 
     // ...
     // let transform = Matrix.multiply([...]);
+    let transform = Matrix.multiply([scale_Matrix, translate_matrix, shear_Matrix, rotate_Matrix, transform_Matrix]);
     // return transform;
+    return transform;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix

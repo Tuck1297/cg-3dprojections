@@ -53,7 +53,7 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     let scale_Z = 1/clip[5];
 
     let scale_Matrix = new Matrix(4, 4);
-    scale_Matrix = [[scale_X, 0, 0, 0], 
+    scale_Matrix.values = [[scale_X, 0, 0, 0], 
                     [0, scale_Y, 0, 0], 
                     [0, 0, scale_Z, 0],
                     [0, 0,   0,     1]];

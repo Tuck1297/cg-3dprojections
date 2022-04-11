@@ -1,4 +1,5 @@
 // New Commit
+/*
 let view;
 let ctx;
 let scene;
@@ -843,10 +844,10 @@ function generateSphere(cnt_x, cnt_y, cnt_z, radius, slices, stacks) {
     return sphereobject;
 
 }
-
+*/
 
 // Previous Commit
-/*
+
 // New Commit
 let view;
 let ctx;
@@ -1722,4 +1723,4 @@ function generateSphere(cnt_x, cnt_y, cnt_z, radiys, slices, stacks) {
     // slices -> think number of logitude lines on a globe
     // stacks -> think number of latitude lines on a globe
 }
-/*
+

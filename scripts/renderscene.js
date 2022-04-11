@@ -4,9 +4,9 @@ let ctx;
 let scene;
 let start_time;
 let update;
-let points = false;
-let animation = false;
-let condition = true;
+//let points = false;
+//let animation = false;
+//let condition = true;
 const LEFT = 32; // binary 100000
 const RIGHT = 16; // binary 010000
 const BOTTOM = 8;  // binary 001000

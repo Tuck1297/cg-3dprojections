@@ -4,9 +4,8 @@ let ctx;
 let scene;
 let start_time;
 let update;
-//let points = false;
-//let animation = false;
-//let condition = true;
+let points = false;
+let animation = false;
 const LEFT = 32; // binary 100000
 const RIGHT = 16; // binary 010000
 const BOTTOM = 8;  // binary 001000
@@ -22,7 +21,6 @@ function init() {
     view = document.getElementById('view');
     view.width = w;
     view.height = h;
-    //loadNewScene();
     ctx = view.getContext('2d');
 
     // initial scene... feel free to change this
@@ -99,12 +97,6 @@ function animate(timestamp) {
                 if (center == undefined) {
                     center = scene.models[i].center;
                 }
-                if (condition == true) {
-                    console.log(center);
-                    console.log(scene)
-                    console.log(scene.models[i].edges)
-                    condition = false;
-                }
                 let rps = scene.models[i].animation.rps;
                 let axis = scene.models[i].animation.axis;
                 // Translate to origin -- rotate -- translate back to original position
@@ -130,10 +122,6 @@ function animate(timestamp) {
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
     window.requestAnimationFrame(animate);
-
-}
-
-function animationProperties() {
 
 }
 

@@ -2,7 +2,7 @@ let view;
 let ctx;
 let scene;
 let start_time;
-let points = false;
+let points = true;
 let animation = false;
 
 const LEFT = 32; // binary 100000
@@ -64,7 +64,7 @@ function init() {
                 center: [10, -10, 45],// center for x axis
                 animation: {
                     axis: "x",
-                    rps: 0.5,
+                    rps: 0.25,
 
                 }
             }
@@ -86,12 +86,13 @@ function animate(timestamp) {
     // Time converted to seconds
     if (animation == true) {
         //console.log(animationArray)
-        let revolutions = (time);
+        
         let t_matrix = new Matrix(4, 4);
         let t_matrix2 = new Matrix(4, 4);
         let rotate = new Matrix(4, 4);
         // Loop over models in animation
         for (let i = 0; i < scene.models.length; i++) {
+            let revolutions = time * scene.models[i].animation.rps * (2*Math.PI);
             if (scene.models[i].animation != null) {
                 let center = scene.models[i].center.data;
                 if (center == undefined) {
@@ -103,13 +104,13 @@ function animate(timestamp) {
                 mat4x4Translate(t_matrix, center[0], center[1], center[2]);
                 if (axis == "y") {
                     // y rotation
-                    mat4x4RotateY(rotate, revolutions / (150/rps));
+                    mat4x4RotateY(rotate, revolutions);
                 } else if (axis == "x") {
                     // x rotation
-                    mat4x4RotateX(rotate, revolutions / (150/rps));
+                    mat4x4RotateX(rotate, revolutions);
                 } else if (axis == "z") {
                     // z rotation
-                    mat4x4RotateZ(rotate, revolutions / (150/rps));
+                    mat4x4RotateZ(rotate, revolutions);
                 }
                 mat4x4Translate(t_matrix2, -center[0], -center[1], -center[2]);
             }

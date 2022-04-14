@@ -92,7 +92,7 @@ function animate(timestamp) {
         let rotate = new Matrix(4, 4);
         // Loop over models in animation
         for (let i = 0; i < scene.models.length; i++) {
-            let revolutions = time * 1000 * scene.models[i].animation.rps * (2*Math.PI);
+            let revolutions = time / 1000;
             if (scene.models[i].animation != null) {
                 let center = scene.models[i].center.data;
                 if (center == undefined) {
@@ -104,13 +104,14 @@ function animate(timestamp) {
                 mat4x4Translate(t_matrix, center[0], center[1], center[2]);
                 if (axis == "y") {
                     // y rotation
-                    mat4x4RotateY(rotate, revolutions);
+                    console.log(rotate)
+                    mat4x4RotateY(rotate, revolutions * rps * (2*Math.PI));
                 } else if (axis == "x") {
                     // x rotation
-                    mat4x4RotateX(rotate, revolutions);
+                    mat4x4RotateX(rotate, revolutions * rps * (2*Math.PI));
                 } else if (axis == "z") {
                     // z rotation
-                    mat4x4RotateZ(rotate, revolutions);
+                    mat4x4RotateZ(rotate, revolutions * rps * (2*Math.PI));
                 }
                 mat4x4Translate(t_matrix2, -center[0], -center[1], -center[2]);
             }
@@ -847,17 +848,9 @@ function generateSphere(cnt_x, cnt_y, cnt_z, radius, slices, stacks) {
         edgesIndex++;
     }
 
-    let tempArray = [];
-    let tempArray2 = [];
-    let edgesArrayIndex = 0;
-
-    // NOTE: do a while loop with two indexes that point to each case
-    // for 0,1,2,3,4,5,6 // 7,8,9,10,11,12,13,14
-
     // pointers of the current positions in array that hold our values
     let firstIndex = 0;
-    let secondIndex = (stacks / 2) - 1;
-    let thirdIndex = 2; 
+    let secondIndex = (stacks / 2) - 1; 
 
     let thirdEdgeVal = 0;
 
@@ -880,7 +873,6 @@ function generateSphere(cnt_x, cnt_y, cnt_z, radius, slices, stacks) {
                 }
                 firstEdgeIndexVal--;
                 secondEdgeIndexVal++;
-                tempArray.push(thirdEdgeVal);
             }
         }
         firstIndex++;

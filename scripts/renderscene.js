@@ -92,7 +92,7 @@ function animate(timestamp) {
         let rotate = new Matrix(4, 4);
         // Loop over models in animation
         for (let i = 0; i < scene.models.length; i++) {
-            let revolutions = time * scene.models[i].animation.rps * (2*Math.PI);
+            let revolutions = time * 1000 * scene.models[i].animation.rps * (2*Math.PI);
             if (scene.models[i].animation != null) {
                 let center = scene.models[i].center.data;
                 if (center == undefined) {
@@ -806,45 +806,100 @@ function generateSphere(cnt_x, cnt_y, cnt_z, radius, slices, stacks) {
     let degToRad = 1 / 180.0 * Math.PI;
     let longitude = 0, latitude = 0;
     let verticesIndex = 0;
-    // Generate all vertices 
+    let array = [];
     for (let i = 0; i < slices; i++) {
+        // lon -> from 0 to slices from -pi to pi
+        //array[i] = new Array();
         latitude = latitude + phi;
         for (let j = 0; j < stacks; j++) {
+            // lat -> from 0 to stacks -half_pi to half_pi
             longitude = longitude + theta;
+            // (radius, lat, lon)
+            // theta = lat phi = lon
+            // x = r sin(theta) cos(phi)
+            // y = r sin(theta) sin(phi)
+            // z = r cos(theta)
             let x = centerX + radius * Math.sin(longitude * degToRad) * Math.sin(latitude * degToRad);
             let y = centerY + radius * Math.cos(longitude * degToRad);
             let z = centerZ + radius * Math.sin(longitude * degToRad) * Math.cos(latitude * degToRad);
             let vertex = new Vector4(x, y, z, 1);
             verticesArray[verticesIndex] = vertex;
             verticesIndex++;
+            //array[i][j] = vertex;
         }
     }
     let edgesIndex = 0;
     // generage the edges - there will be slices + stacks of vertices
-    for (let i = 0; i < slices * stacks - 1; i++) {
-        edges[edgesIndex] = [i, i + 1];
+    let jIndex = 0;
+    for (i = 0; i < slices; i++) {
+        let tempArray = [];
+        if (jIndex - 1 > 0) {
+            tempArray.push(jIndex - 1);
+        } else {
+            tempArray.push(0);
+        }
+        for (let j = jIndex; j < jIndex + stacks; j++) {
+            tempArray.push(j);
+        }
+        jIndex = jIndex + stacks;
+
+        edges[edgesIndex] = tempArray;
         edgesIndex++;
     }
-    edges[edgesIndex] = [0, edgesIndex];
-    
-    //edges[edgesIndex] = [120,6];
-    //edgesIndex++;
-    //edges[edgesIndex] = [120,230];
-    //edgesIndex++;
-    //edges[edgesIndex] = [230,88];
-    //edgesIndex++
-    //edges[edgesIndex] = [88,198];
-    //edgesIndex++;
-    
-    // Wrap in object to pass to calling function
+
+    let tempArray = [];
+    let tempArray2 = [];
+    let edgesArrayIndex = 0;
+
+    // NOTE: do a while loop with two indexes that point to each case
+    // for 0,1,2,3,4,5,6 // 7,8,9,10,11,12,13,14
+
+    // pointers of the current positions in array that hold our values
+    let firstIndex = 0;
+    let secondIndex = (stacks / 2) - 1;
+    let thirdIndex = 2; 
+
+    let thirdEdgeVal = 0;
+
+    let firstEdgeIndexVal = slices;
+    let secondEdgeIndexVal = 0;
+    while (secondIndex < stacks) {
+        // loop over index values at current first and second index
+        for (let i = 0; i < edges[firstIndex].length; i++) {
+            let firstEdgeVal = edges[firstIndex][firstEdgeIndexVal];
+            let secondEdgeVal = edges[secondIndex][secondEdgeIndexVal];
+            if (secondIndex+2 < stacks) {
+                thirdEdgeVal = edges[secondIndex+2][secondEdgeIndexVal];
+            }
+            if (firstEdgeVal != undefined && secondEdgeVal != undefined) {
+                edges[edgesIndex] = [firstEdgeVal, secondEdgeVal];
+                edgesIndex++;
+                if (secondIndex+2 < stacks) {
+                    edges[edgesIndex] = [firstEdgeVal, thirdEdgeVal];
+                    edgesIndex++;
+                }
+                firstEdgeIndexVal--;
+                secondEdgeIndexVal++;
+                tempArray.push(thirdEdgeVal);
+            }
+        }
+        firstIndex++;
+        secondIndex++;
+        firstEdgeIndexVal = slices;
+        secondEdgeIndexVal = 0;
+    }
+
+    //console.log(edges)
     let sphereobject = {
         vertices: [
             verticesArray
         ],
+        // generate the edges
         edges: [
             edges
         ]
     };
+    //console.log(array)
     return sphereobject;
 
 }

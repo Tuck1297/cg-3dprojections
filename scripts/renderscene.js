@@ -3,7 +3,7 @@ let ctx;
 let scene;
 let start_time;
 let points = true;
-let animation = false;
+let animation = true;
 
 const LEFT = 32; // binary 100000
 const RIGHT = 16; // binary 010000

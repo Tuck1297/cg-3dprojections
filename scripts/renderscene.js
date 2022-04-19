@@ -115,7 +115,7 @@ function animate(timestamp) {
                 }
                 mat4x4Translate(t_matrix2, -center[0], -center[1], -center[2]);
             }
-            scene.models[0].matrix = Matrix.multiply([t_matrix2, rotate, t_matrix]);
+            scene.models[i].matrix = Matrix.multiply([t_matrix2, rotate, t_matrix]);
         }
     }
     // step 3: draw scene

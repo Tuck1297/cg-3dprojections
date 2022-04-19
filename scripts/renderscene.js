@@ -104,7 +104,7 @@ function animate(timestamp) {
                 mat4x4Translate(t_matrix, center[0], center[1], center[2]);
                 if (axis == "y") {
                     // y rotation
-                    console.log(rotate)
+                    //console.log(rotate)
                     mat4x4RotateY(rotate, revolutions * rps * (2*Math.PI));
                 } else if (axis == "x") {
                     // x rotation
@@ -124,10 +124,6 @@ function animate(timestamp) {
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
     window.requestAnimationFrame(animate);
-
-}
-
-function animationProperties() {
 
 }
 

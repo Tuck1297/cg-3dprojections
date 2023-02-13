@@ -37,7 +37,7 @@ Below are the bits of information you would need to provide for each common shap
   - center ([x, y, z])
   - radius
   - height
-  - # of sides
+  - number of sides
 - cylinder
   - center ([x, y, z])
   - radius
@@ -52,6 +52,11 @@ Below are the bits of information you would need to provide for each common shap
   - Animation
      - axis (x, y, or z)
      - rps: Revolutions Per Second
+  `` "animation": {
+                "axis": "y",
+                "rps": 0.5
+
+            }``
 
 # Controls
 

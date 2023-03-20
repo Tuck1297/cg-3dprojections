@@ -6,6 +6,10 @@
 
 This project was the second of four major assignments from the Computer Graphics course from the University of St. Thomas. It focuses on using HTML's 2D Canvas API to render both parallel and perspective 3D wireframe projections. 
 
+## Try it out
+
+[Wire Shapes Demo](https://tuck1297.github.io/cg-3dprojections/)
+
 ## Behind the Scenes Walkthrough
 
 This project's main function is to provide a hands-on experience in creating and managing data with arrays and matrices in a way so that one can successfully implement a wireframe shape graphic pipeline that can be loaded and displayed in the web browser. 

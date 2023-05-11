@@ -1,8 +1,7 @@
 <div align="center">
   <h1>3D Projections for Wireframe Rendering</h1>  
+  <img src="home-star-3d.gif"/>
 </div>
-
-![Star Projections](home-star-3d.gif)
 
 ## Project Overview 
 
